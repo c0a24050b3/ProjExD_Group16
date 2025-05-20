@@ -45,8 +45,18 @@ def main():
         elif not key_lst[pg.K_RIGHT]:
             a = -1
             b = 0
-        kk_rct.move_ip((a, b))#演習２
+            kk_rct.move_ip((a, b))#演習２
 
+        if event.type == pg.KEYDOWN and event.key == pg.K_LCTRL:
+                kk_img.speed = 100 # 速度アップ
+        if event.type == pg.KEYUP:
+            if event.key == pg.K_LCTRL:
+                kk_img.speed = 30 # 元の速度に戻す
+
+
+
+        
+        
         x = tmr%3200 #練習６ 練習９
        
         screen.blit(bg_img, [-x, 0]) #練習６
@@ -60,6 +70,26 @@ def main():
         pg.display.update()
         tmr += 1        
         clock.tick(200)#練習５
+    
+def __init__(self, num: int, xy: tuple[int, int]):
+    super().__init__()
+    img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.9)
+    img = pg.transform.flip(img0, True, False) # デフォルトのこうかとん
+    self.imgs = {
+        (+1, 0): img, # 右
+        (+1, -1): pg.transform.rotozoom(img, 45, 0.9), # 右上
+        (0, -1): pg.transform.rotozoom(img, 90, 0.9), # 上
+        (-1, -1): pg.transform.rotozoom(img0, -45, 0.9), # 左上
+        (-1, 0): img0, # 左
+        (-1, +1): pg.transform.rotozoom(img0, 45, 0.9), # 左下
+        (0, +1): pg.transform.rotozoom(img, -90, 0.9), # 下
+        (+1, +1): pg.transform.rotozoom(img, -45, 0.9), # 右下
+    }
+    self.dire = (+1, 0)
+    self.image = self.imgs[self.dire]
+    self.rect = self.image.get_rect()
+    self.rect.center = xy
+    self.speed = 30
 
 if __name__ == "__main__":
     pg.init()
