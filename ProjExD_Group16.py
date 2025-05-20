@@ -4,6 +4,44 @@ import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+class Koukaton:
+    def __init__(self, num: int, xy: tuple[int, int]):
+        img0 = pg.transform.rotozoom(pg.image.load(f"fig/{num}.png"), 0, 0.9)
+        img = pg.transform.flip(img0, True, False) # ノーマルこうかとん
+        self.imgs = {
+            (+1, 0): img,
+            (+1, -1): pg.transform.rotozoom(img, 45, 0.9),
+            (0, -1): pg.transform.rotozoom(img, 90, 0.9),
+            (-1, -1): pg.transform.rotozoom(img0, -45, 0.9),
+            (-1, 0): img0,
+            (-1, +1): pg.transform.rotozoom(img0, 45, 0.9),
+            (0, +1): pg.transform.rotozoom(img, -90, 0.9),
+            (+1, +1): pg.transform.rotozoom(img, -45, 0.9),
+        }
+        self.dire = (+1, 0)
+        self.image = self.imgs[self.dire]
+        self.rect = self.image.get_rect(center=xy)
+        self.speed = 30
+
+    def update(self, key_lst):
+        a = b = 0
+        if key_lst[pg.K_UP]:
+            b = -1
+        if key_lst[pg.K_DOWN]:
+            b = +1
+        if key_lst[pg.K_LEFT]:
+            a = -1
+        if key_lst[pg.K_RIGHT]:
+            a = +1
+        self.dire = (a, b)
+        if (a, b) != (0, 0):
+            self.image = self.imgs.get((a, b), self.image)
+            self.rect.move_ip(a * self.speed / 30, b * self.speed / 30)
+
+    def draw(self, screen):
+        screen.blit(self.image, self.rect)
+
+
 
 def main():
     pg.display.set_caption("はばたけ！こうかとん")
@@ -47,11 +85,7 @@ def main():
             b = 0
             kk_rct.move_ip((a, b))#演習２
 
-        if event.type == pg.KEYDOWN and event.key == pg.K_LCTRL:
-                kk_img.speed = 100 # 速度アップ
-        if event.type == pg.KEYUP:
-            if event.key == pg.K_LCTRL:
-                kk_img.speed = 30 # 元の速度に戻す
+        
 
 
 
@@ -90,6 +124,41 @@ def __init__(self, num: int, xy: tuple[int, int]):
     self.rect = self.image.get_rect()
     self.rect.center = xy
     self.speed = 30
+
+def main():
+    pg.display.set_caption("はばたけ！こうかとん")
+    screen = pg.display.set_mode((800, 600))
+    clock = pg.time.Clock()
+    bg_img = pg.image.load("fig/pg_bg.jpg")
+    bg_img2 = pg.transform.flip(bg_img, True, False)
+
+    kouka = Koukaton(3, (300, 200))  
+
+    tmr = 0
+    while True:
+        key_lst = pg.key.get_pressed()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return
+            if event.type == pg.KEYDOWN and event.key == pg.K_LCTRL:
+                kouka.speed = 100
+            if event.type == pg.KEYUP and event.key == pg.K_LCTRL:
+                kouka.speed = 30
+
+        
+        kouka.update(key_lst)
+
+        x = tmr % 200
+        screen.blit(bg_img, [-x, 0])
+        screen.blit(bg_img2, [-x + 1600, 0])
+        screen.blit(bg_img, [-x + 3200, 0])
+        kouka.draw(screen)
+
+        pg.display.update()
+        tmr += 1
+        clock.tick(50)
+
+
 
 if __name__ == "__main__":
     pg.init()
