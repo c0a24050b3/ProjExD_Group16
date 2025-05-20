@@ -4,6 +4,18 @@ import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
+class Score(): #Scoreクラス
+    def __init__(self): #イニシャライザ
+        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30) #フォントの設定
+        self.value = 0
+        self.img = self.fonto.render(f"score:{self.value}", True, (0, 0, 225)) #scoreの色
+        self.rct = self.img.get_rect() #rectにする
+
+    def update(self,screen:pg.Surface): #updateメソッド
+        self.img = self.fonto.render(f"score:{self.value}", True, (0, 0, 225))
+        screen.blit(self.img, [100, 600])
+
+
 
 def main():
     pg.display.set_caption("はばたけ！こうかとん")
@@ -18,9 +30,13 @@ def main():
 
     kk_rct = kk_img.get_rect()#練習１０.１
     kk_rct.center = 300, 200#練習１０.２
+
+    score = Score()
+
     
 
     tmr = 0
+    score = 0
     while True:
         for event in pg.event.get():
             if event.type == pg.QUIT: return
@@ -47,6 +63,9 @@ def main():
             b = 0
         kk_rct.move_ip((a, b))#演習２
 
+        distance = kk_img.distance_to(kk_img) #距離に応じてスコアを追加する
+        score += distance * 0.1  # 距離に対して倍率をかける
+
         x = tmr%3200 #練習６ 練習９
        
         screen.blit(bg_img, [-x, 0]) #練習６
@@ -60,6 +79,8 @@ def main():
         pg.display.update()
         tmr += 1        
         clock.tick(200)#練習５
+        score.update(screen) #scoreを画面に表示
+        pg.display.update()
 
 if __name__ == "__main__":
     pg.init()
