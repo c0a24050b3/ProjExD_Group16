@@ -13,7 +13,7 @@ class Enemy(pg.sprite.Sprite):
     def __init__(self):
         super().__init__()
         img = pg.image.load("fig/enemy.png")
-        self.image = pg.transform.rotozoom(img, 0, 0.2)
+        self.image = pg.transform.rotozoom(img, 0, 0.15)
         self.rect = self.image.get_rect()
         self.rect.center = 800, random.randint(0,600)
         self.vx, self.vy = -2 , 0
@@ -29,19 +29,21 @@ class Enemy(pg.sprite.Sprite):
         時間経過で挙動変更
         """
         self.rect.move_ip(self.vx,self.vy)
-        if tmr >= 3000:
-            self.vx = -4  # 移動速度を倍にする
         if tmr >= 2000:
+            self.vx = -1.5
             self.up_down_moving = True
+
+        if tmr >= 3500:
+            self.vx = -2.5  # 移動速度を倍にする
 
         if self.up_down_moving:
             self.vy = 1 * self.direction
             self.rect.move_ip(self.vx, self.vy)
 
             # 基準座標から±20～40ピクセル以上動いたら方向転換
-            if self.rect.centery > self.base_y + random.randint(200,300):
+            if self.rect.centery > self.base_y + random.randint(400,500):
                 self.direction = -1
-            elif self.rect.centery < self.base_y - random.randint(200,300):
+            elif self.rect.centery < self.base_y - random.randint(400,500):
                 self.direction = 1
 
             # 画面上端または下端で方向反転
