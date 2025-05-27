@@ -3,6 +3,7 @@ import random
 import sys
 import random
 import pygame as pg
+import math
 
 WIDTH = 800
 HEIGHT = 600
@@ -11,6 +12,7 @@ import random
 os.chdir(os.path.dirname(os.path.abspath(__file__)))  # スクリプトの場所に移動
 
 
+#無敵処理
 class Muteki:
     def __init__(self, img_path):
         self.image = pg.image.load(img_path)
@@ -51,7 +53,6 @@ class Muteki:
             screen.blit(flash_img, kk_rct)
         else:
             screen.blit(kk_img, kk_rct)
-
 class Score:
     """
     打ち落とした爆弾，敵機の数をスコアとして表示するクラス
@@ -73,7 +74,7 @@ class Score:
 
 class Kabe(pg.sprite.Sprite):
     """敵機に関するクラス"""
-    imgs = [pg.image.load("fig/1.png") for _ in range(3)]  # 画像を1回だけ読み込む
+    imgs = [pg.image.load("fig/shougaibutu1.png") for _ in range(3)]  # 画像を1回だけ読み込む
 
     def __init__(self, size):
         super().__init__()
@@ -115,7 +116,7 @@ class Koukaton:#こうかとん
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 30
-    def update(self, key_lst,wall):
+    def update(self, key_lst, walls: pg.sprite.Group):
         a = b = 0
         if key_lst[pg.K_UP]:
             b = -1
@@ -128,12 +129,57 @@ class Koukaton:#こうかとん
         self.dire = (a, b)
         if (a, b) != (0, 0):
             self.image = self.imgs.get((a, b), self.image)
-            self.rect.move(a * self.speed / 30, b * self.speed / 30)
-            new_rect = self.rect.move(a * self.speed / 30, b * self.speed / 30) 
-            if not new_rect.colliderect(wall):
+            new_rect = self.rect.move(a * self.speed / 30, b * self.speed / 30)
+
+            # 壁とぶつかっていない場合のみ位置更新
+            if not any(new_rect.colliderect(kabe.rect) for kabe in walls):
                 self.rect = new_rect
+
+    # def update(self, key_lst, wall: Kabe):
+    #     a = b = 0
+    #     if key_lst[pg.K_UP]:
+    #         b = -1
+    #     if key_lst[pg.K_DOWN]:
+    #         b = +1
+    #     if key_lst[pg.K_LEFT]:
+    #         a = -1
+    #     if key_lst[pg.K_RIGHT]:
+    #         a = +1
+    #     self.dire = (a, b)
+    #     if (a, b) != (0, 0):
+    #         self.image = self.imgs.get((a, b), self.image)
+    #         self.rect.move(a * self.speed / 30, b * self.speed / 30)
+    #         new_rect = self.rect.move(a * self.speed / 30, b * self.speed / 30) 
+    #         if not new_rect.colliderect(wall):
+    #             self.rect = new_rect
     def draw(self, screen):
         screen.blit(self.image, self.rect)
+
+class Beam(pg.sprite.Sprite):
+    """
+    ビームに関するクラス
+    """
+    def __init__(self, bird: Koukaton, angle0: float=0):
+        """
+        ビーム画像Surfaceを生成する
+        引数 bird：ビームを放つこうかとん
+        """
+        super().__init__()
+        self.vx, self.vy = bird.dire
+        angle = math.degrees(math.atan2(-self.vy, self.vx)) + angle0
+        self.image = pg.transform.rotozoom(pg.image.load(f"fig/beam.png"), angle, 1.0)
+        self.vx = math.cos(math.radians(angle))
+        self.vy = -math.sin(math.radians(angle))
+        self.rect = self.image.get_rect()
+        self.rect.centery = bird.rect.centery+bird.rect.height*self.vy
+        self.rect.centerx = bird.rect.centerx+bird.rect.width*self.vx
+        self.speed = 10
+        self.state = "active"
+    
+    def update(self):
+        self.rect.move_ip(self.vx * self.speed, self.vy * self.speed)
+        if self.rect.left > WIDTH or self.rect.right < 0 or self.rect.top > HEIGHT or self.rect.bottom < 0:
+            self.kill()
 
 # class Enemy:#敵
 #     def __init__(self, xy):
@@ -198,10 +244,12 @@ class Enemy(pg.sprite.Sprite):
 
 def main():
     pg.display.set_caption("はばたけ！こうかとん")
-    screen = pg.display.set_mode((800, 600))
+    screen = pg.display.set_mode((WIDTH, HEIGHT))
     clock = pg.time.Clock()
-
+ #無敵アイテム
+    muteki_item = Muteki("fig/muteki_cake.jpg")
     # 背景画像
+
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
 
@@ -212,19 +260,26 @@ def main():
     kk_size = kk_img.get_size()  # 敵画像にも使うため保存    
     kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
+    bird = Koukaton(3, (900, 400))
+    beams = pg.sprite.Group()
+    emys = pg.sprite.Group()
 
-    # 無敵アイテム
-    muteki_item = Muteki("fig/muteki_cake.jpg")
-    score = Score()
+   
 
+   
+    score = Score() 
     
+
     kabes = pg.sprite.Group()
     bg_img2 = pg.transform.flip(bg_img, True, False)#練習８88888888888
-    wall = pg.Rect(400, 100, 50, 400)
+    wall = pg.Rect(0, 0, 0, 0)
 
 
     kk_rct = kk_img.get_rect()#練習１０.１
     kk_rct.center = 300, 200#練習１０.２
+
+    
+    
 
     emys = pg.sprite.Group()
     
@@ -232,13 +287,22 @@ def main():
     
     kouka = Koukaton(3, (300, 200))
     enemy = Enemy()
-    bg_img = pg.image.load("fig/pg_bg.jpg")
+    
     bg_img2 = pg.transform.flip(bg_img, True, False) 
     tmr = 0
     # score = 0
 
+    muteki_item.update(screen, kk_rct, kk_img, tmr)
+
 
     while True:
+        key_lst = pg.key.get_pressed()
+        for event in pg.event.get():
+            if event.type == pg.QUIT:
+                return 0
+            if event.type == pg.KEYDOWN:
+                if event.key == pg.K_SPACE:
+                    beams.add(Beam(kouka))  # 通常ビーム
         key_lst = pg.key.get_pressed()
         for event in pg.event.get():
             if event.type == pg.QUIT:
@@ -248,15 +312,18 @@ def main():
             if event.type == pg.KEYUP and event.key == pg.K_LCTRL:#元の速さ（押していないとき）
                 kouka.speed = 30
 
-        kouka.update(key_lst,wall)
+        kouka.update(key_lst,kabes)
+
         
+        for emy in pg.sprite.groupcollide(emys, beams, True, True).keys():
+            score.value += 10
 
                    
-        
 
-        if kouka.rect.colliderect(enemy.rect):#敵に触れた際ゲームオーバー
-            print("Game Over!")
-            return 
+        if kouka.rect.colliderect(enemy.rect):
+            if not muteki_item.active:
+                print("Game Over!")
+                return
 
       
 
@@ -282,15 +349,49 @@ def main():
 
         # screen.blit(kk_img, [300, 200])#練習４
 
+        if tmr % 200 == 0:
+            kabes.add(Kabe(kk_size))  # 主人公サイズで敵を生成
+            kabes.add(Kabe(kk_size))  # 主人公サイズで敵を生成
+        kabes.update()
+        kabes.draw(screen)
+
         for enemy in emys:
             enemy.update(tmr)
         emys.draw(screen)
 
-        screen.blit(kk_img, kk_rct)#練習１０.５
+        # screen.blit(kk_img, kk_rct)#練習１０.５
 
+        beams.update()
+        beams.draw(screen)
         kouka.draw(screen)
         enemy.draw(screen)
         pg.draw.rect(screen, (128, 64, 0), wall)
+
+        screen.blit(bg_img, [-x, 0])
+        screen.blit(bg_img2, [-x+1600 ,0])
+        screen.blit(bg_img, [-x+3200, 0])
+
+        if tmr % 200 == 0:
+            kabes.add(Kabe(kk_size))
+            kabes.add(Kabe(kk_size))
+        kabes.update()
+        kabes.draw(screen)
+
+        for enemy in emys:
+            enemy.update(tmr)
+        emys.draw(screen)
+
+        beams.update()
+        beams.draw(screen)
+        kouka.draw(screen)
+        enemy.draw(screen)
+        muteki_item.update(screen, kouka.rect, kouka.image, tmr)  # ★ ここを追加！
+        pg.draw.rect(screen, (128, 64, 0), wall)
+
+        score.update(screen)
+        pg.display.update()
+        tmr += 1
+        clock.tick(200)
 
 
        
