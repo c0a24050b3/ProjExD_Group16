@@ -1,4 +1,5 @@
 import os
+import random
 import sys
 import random
 import pygame as pg
@@ -72,7 +73,7 @@ class Score:
 
 class Kabe(pg.sprite.Sprite):
     """敵機に関するクラス"""
-    imgs = [pg.image.load("fig/shougaibutu1.png") for _ in range(3)]  # 画像を1回だけ読み込む
+    imgs = [pg.image.load("fig/1.png") for _ in range(3)]  # 画像を1回だけ読み込む
 
     def __init__(self, size):
         super().__init__()
@@ -134,18 +135,66 @@ class Koukaton:#こうかとん
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
-class Enemy:#敵
-    def __init__(self, xy):
-        self.image = pg.image.load("fig/enemy.png")  
-        self.rect = self.image.get_rect(center=xy)
+# class Enemy:#敵
+#     def __init__(self, xy):
+#         self.image = pg.image.load("fig/enemy.png")  
+#         self.rect = self.image.get_rect(center=xy)
 
+#     def draw(self, screen):
+#         screen.blit(self.image, self.rect)
+    
+
+
+    
+
+class Enemy(pg.sprite.Sprite):
+    """
+    敵に関するクラス
+    """
+    
+    def __init__(self):
+        super().__init__()
+        img = pg.image.load("fig/enemy.png")
+        self.image = pg.transform.rotozoom(img, 0, 0.1)
+        self.rect = self.image.get_rect()
+        self.rect.center = 800, random.randint(0,600)
+        self.vx, self.vy = -2 , 0
+        self.up_down_moving = False  # 上下移動開始フラグ
+        self.direction = 1  # 上下移動の方向（1:下, -1:上）
+        self.base_y = self.rect.centery
+
+
+        
+    def update(self, tmr):
+        """
+        敵を右から左に移動させる
+        時間経過で挙動変更
+        """
+        self.rect.move_ip(self.vx,self.vy)
+        if tmr >= 2000:
+            self.vx = -1.5
+            self.up_down_moving = True
+
+        if tmr >= 3500:
+            self.vx = -2.5  # 移動速度をあげる
+
+        if self.up_down_moving:
+            self.vy = 1 * self.direction
+            self.rect.move_ip(self.vx, self.vy)
+
+            # 基準座標から方向転換
+            if self.rect.centery > self.base_y + random.randint(300,500):
+                self.direction = -1
+            elif self.rect.centery < self.base_y - random.randint(300,500):
+                self.direction = 1
+
+            # 画面上端または下端で方向反転
+            if self.rect.top <= 0:
+                self.direction = 1
+            elif self.rect.bottom >= 600:
+                self.direction = -1
     def draw(self, screen):
         screen.blit(self.image, self.rect)
-    
-
-
-    
-
 
 def main():
     pg.display.set_caption("はばたけ！こうかとん")
@@ -160,11 +209,12 @@ def main():
     kk_img = pg.image.load("fig/3.png")
     kk_img = pg.transform.flip(kk_img, True, False)
     kk_img = pg.transform.rotozoom(kk_img, 10, 1.0)
-    kk_size = kk_img.get_size()  # 敵画像にも使うため保存    kk_rct = kk_img.get_rect()
+    kk_size = kk_img.get_size()  # 敵画像にも使うため保存    
+    kk_rct = kk_img.get_rect()
     kk_rct.center = 300, 200
 
     # 無敵アイテム
-muteki_item = Muteki("fig/muteki_cake.jpg")
+    muteki_item = Muteki("fig/muteki_cake.jpg")
     score = Score()
 
     
@@ -173,15 +223,19 @@ muteki_item = Muteki("fig/muteki_cake.jpg")
     wall = pg.Rect(400, 100, 50, 400)
 
 
+    kk_rct = kk_img.get_rect()#練習１０.１
+    kk_rct.center = 300, 200#練習１０.２
+
+    emys = pg.sprite.Group()
     
 
     
     kouka = Koukaton(3, (300, 200))
-    enemy = Enemy((1000, 300))
+    enemy = Enemy()
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False) 
     tmr = 0
-    score = 0
+    # score = 0
 
 
     while True:
@@ -218,12 +272,21 @@ muteki_item = Muteki("fig/muteki_cake.jpg")
         
         
         x = tmr%3200 #練習６ 練習９
+
+        if tmr%400 == 0:    # 敵を2秒間隔で追加
+            emys.add(Enemy())
        
         screen.blit(bg_img, [-x, 0]) #練習６
         screen.blit(bg_img2, [-x+1600 ,0])#練習７
         screen.blit(bg_img, [-x+3200, 0])#練習９
 
         # screen.blit(kk_img, [300, 200])#練習４
+
+        for enemy in emys:
+            enemy.update(tmr)
+        emys.draw(screen)
+
+        screen.blit(kk_img, kk_rct)#練習１０.５
 
         kouka.draw(screen)
         enemy.draw(screen)
