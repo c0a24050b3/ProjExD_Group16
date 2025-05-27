@@ -4,17 +4,23 @@ import pygame as pg
 
 os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
-class Score(): #Scoreクラス
-    def __init__(self): #イニシャライザ
-        self.fonto = pg.font.SysFont("hgp創英角ﾎﾟｯﾌﾟ体", 30) #フォントの設定
+class Score:
+    """
+    打ち落とした爆弾，敵機の数をスコアとして表示するクラス
+    爆弾：1点
+    敵機：10点
+    """
+    def __init__(self):
+        self.font = pg.font.Font(None, 50)
+        self.color = (0, 0, 255)
         self.value = 0
-        self.img = self.fonto.render(f"score:{self.value}", True, (0, 0, 225)) #scoreの色
-        self.rct = self.img.get_rect() #rectにする
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        self.rect = self.image.get_rect()
+        self.rect.center = 100, 550
 
-    def update(self,screen:pg.Surface): #updateメソッド
-        self.img = self.fonto.render(f"score:{self.value}", True, (0, 0, 225))
-        screen.blit(self.img, [100, 600])
-
+    def update(self, screen: pg.Surface):
+        self.image = self.font.render(f"Score: {self.value}", 0, self.color)
+        screen.blit(self.image, self.rect)
 
 
 def main():
@@ -63,8 +69,8 @@ def main():
             b = 0
         kk_rct.move_ip((a, b))#演習２
 
-        distance = kk_img.distance_to(kk_img) #距離に応じてスコアを追加する
-        score += distance * 0.1  # 距離に対して倍率をかける
+        # distance = kk_img.distance_to(kk_img) #距離に応じてスコアを追加する
+        # score += distance * 0.1  # 距離に対して倍率をかける
 
         x = tmr%3200 #練習６ 練習９
        
