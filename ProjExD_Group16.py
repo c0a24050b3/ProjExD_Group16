@@ -24,7 +24,7 @@ class Koukaton:#こうかとん
         self.rect = self.image.get_rect()
         self.rect.center = xy
         self.speed = 30
-    def update(self, key_lst):
+    def update(self, key_lst,wall):
         a = b = 0
         if key_lst[pg.K_UP]:
             b = -1
@@ -37,7 +37,10 @@ class Koukaton:#こうかとん
         self.dire = (a, b)
         if (a, b) != (0, 0):
             self.image = self.imgs.get((a, b), self.image)
-            self.rect.move_ip(a * self.speed / 30, b * self.speed / 30)
+            self.rect.move(a * self.speed / 30, b * self.speed / 30)
+            new_rect = self.rect.move(a * self.speed / 30, b * self.speed / 30) 
+            if not new_rect.colliderect(wall):
+                self.rect = new_rect
     def draw(self, screen):
         screen.blit(self.image, self.rect)
 
@@ -60,6 +63,9 @@ def main():
     clock  = pg.time.Clock()
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)#練習８88888888888
+    wall = pg.Rect(400, 100, 50, 400)
+
+
     
 
     
@@ -80,7 +86,7 @@ def main():
             if event.type == pg.KEYUP and event.key == pg.K_LCTRL:#元の速さ（押していないとき）
                 kouka.speed = 30
 
-        kouka.update(key_lst)
+        kouka.update(key_lst,wall)
         
 
                    
@@ -113,6 +119,8 @@ def main():
 
         kouka.draw(screen)
         enemy.draw(screen)
+        pg.draw.rect(screen, (128, 64, 0), wall)
+
 
        
         
