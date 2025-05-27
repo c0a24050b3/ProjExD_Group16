@@ -3,43 +3,61 @@ import sys
 import pygame as pg
 import random
 
-os.chdir(os.path.dirname(os.path.abspath(__file__)))
+os.chdir(os.path.dirname(os.path.abspath(__file__)))  # スクリプトの場所に移動
 
-# 無敵処理
-def muteki(screen, kk_img, kk_rct, muteki_img, muteki_rct, tmr, muteki_flag, muteki_time):
-    # アイテムに触れたら無敵ON
-    if kk_rct.colliderect(muteki_rct):
-        muteki_flag = True
-        muteki_time = tmr
-        muteki_rct.center = (-100, -100)  # 画面外へ移動（消す）
 
-    # 無敵時間経過で解除（約3秒＝300フレーム）
-    if muteki_flag and tmr - muteki_time > 300:
-        muteki_flag = False
+class Muteki:
+    def __init__(self, img_path):
+        self.image = pg.image.load(img_path)
+        self.image = pg.transform.scale(self.image, (50, 50))
+        self.rect = self.image.get_rect()
+        self.rect.center = (-100, -100)  # 最初は非表示
+        self.active = False
+        self.start_time = 0
+        self.duration = 300  # 無敵時間（3秒）
+        self.respawn_interval = 1000  # アイテム再出現時間（5秒）
+        self.last_taken_time = -self.respawn_interval  # 最初から出現できる
 
-    # アイテム表示
-    if muteki_rct.center != (-100, -100):
-        screen.blit(muteki_img, muteki_rct)
+    def update(self, screen, kk_rct, kk_img, tmr):
+        # アイテムが非表示かつ再出現タイミングなら再配置
+        if self.rect.center == (-100, -100) and tmr - self.last_taken_time >= self.respawn_interval:
+            self.rect.center = (random.randint(400, 700), random.randint(100, 500))
 
-    # 無敵中はこうかとんが光る
-    if muteki_flag:
-        flash_img = pg.Surface((kk_rct.width, kk_rct.height), pg.SRCALPHA)
-        flash_img.fill((255, 255, 0, 128))  # 黄色半透明
-        screen.blit(kk_img, kk_rct)
-        screen.blit(flash_img, kk_rct)
-    else:
-        screen.blit(kk_img, kk_rct)
+        # こうかとんがアイテムに当たったとき
+        if kk_rct.colliderect(self.rect):
+            self.active = True
+            self.start_time = tmr
+            self.last_taken_time = tmr
+            self.rect.center = (-100, -100)  # 消す
 
-    return muteki_flag, muteki_time
+        # 無敵時間が過ぎたら無敵解除
+        if self.active and tmr - self.start_time > self.duration:
+            self.active = False
+
+        # アイテム描画
+        if self.rect.center != (-100, -100):
+            screen.blit(self.image, self.rect)
+
+        # こうかとん描画（無敵なら光らせる）
+        if self.active:
+            flash_img = pg.Surface((kk_rct.width, kk_rct.height), pg.SRCALPHA)
+            flash_img.fill((255, 255, 0, 128))  # 黄色半透明
+            screen.blit(kk_img, kk_rct)
+            screen.blit(flash_img, kk_rct)
+        else:
+            screen.blit(kk_img, kk_rct)
+
 
 def main():
     pg.display.set_caption("はばたけ！こうかとん")
     screen = pg.display.set_mode((800, 600))
     clock = pg.time.Clock()
 
+    # 背景画像
     bg_img = pg.image.load("fig/pg_bg.jpg")
     bg_img2 = pg.transform.flip(bg_img, True, False)
 
+    # こうかとん画像
     kk_img = pg.image.load("fig/3.png")
     kk_img = pg.transform.flip(kk_img, True, False)
     kk_img = pg.transform.rotozoom(kk_img, 10, 1.0)
@@ -47,13 +65,7 @@ def main():
     kk_rct.center = 300, 200
 
     # 無敵アイテム
-    muteki_img = pg.image.load("fig/muteki_cake.jpg")
-    muteki_img = pg.transform.scale(muteki_img, (50, 50))
-    muteki_rct = muteki_img.get_rect()
-    muteki_rct.center = (random.randint(400, 700), random.randint(100, 500))
-
-    muteki_flag = False
-    muteki_time = 0
+    muteki_item = Muteki("fig/muteki_cake.jpg")
 
     tmr = 0
     while True:
@@ -67,9 +79,9 @@ def main():
         screen.blit(bg_img2, [-x + 1600, 0])
         screen.blit(bg_img, [-x + 3200, 0])
 
-        # 移動処理
+        # こうかとんの移動
         key_lst = pg.key.get_pressed()
-        a = -1  # デフォルト速度
+        a = -1
         b = 0
         if key_lst[pg.K_UP]:
             b = -1
@@ -79,19 +91,15 @@ def main():
             a = -2
         elif key_lst[pg.K_RIGHT]:
             a = +1
-
         kk_rct.move_ip(a, b)
 
-        # 無敵処理（こうかとんとmutekiアイテムの当たり判定含む）
-        muteki_flag, muteki_time = muteki(
-            screen, kk_img, kk_rct,
-            muteki_img, muteki_rct,
-            tmr, muteki_flag, muteki_time
-        )
+        # 無敵処理と描画
+        muteki_item.update(screen, kk_rct, kk_img, tmr)
 
         pg.display.update()
         tmr += 1
         clock.tick(200)
+
 
 if __name__ == "__main__":
     pg.init()
