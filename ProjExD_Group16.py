@@ -218,11 +218,11 @@ class Enemy(pg.sprite.Sprite):
         """
         self.rect.move_ip(self.vx,self.vy)
         if tmr >= 2000:
-            self.vx = -1.5
+            self.vx = 2.0
             self.up_down_moving = True
 
         if tmr >= 3500:
-            self.vx = -2.5  # 移動速度をあげる
+            self.vx = -1.0  # 移動速度をあげる
 
         if self.up_down_moving:
             self.vy = 1 * self.direction
@@ -343,9 +343,9 @@ def main():
         if tmr%400 == 0:    # 敵を2秒間隔で追加
             emys.add(Enemy())
        
-        screen.blit(bg_img, [-x, 0]) #練習６
-        screen.blit(bg_img2, [-x+1600 ,0])#練習７
-        screen.blit(bg_img, [-x+3200, 0])#練習９
+        # screen.blit(bg_img, [-x, 0]) #練習６
+        # screen.blit(bg_img2, [-x+1600 ,0])#練習７
+        # screen.blit(bg_img, [-x+3200, 0])#練習９
 
         # screen.blit(kk_img, [300, 200])#練習４
 
@@ -396,12 +396,12 @@ def main():
 
        
         
-        pg.display.update()
-        tmr += 1
-        clock.tick(200)
+        # pg.display.update()
+        # tmr += 1
+        # clock.tick(200)
 
-        score.update(screen) #scoreを画面に表示
-        pg.display.update()
+        # score.update(screen) #scoreを画面に表示
+        # pg.display.update()
         
 
 
