@@ -86,7 +86,7 @@ class Kabe(pg.sprite.Sprite):
         self.rect.left = WIDTH - 100  # 画面の右端より外側から出現
         self.rect.centery = random.randint(50, HEIGHT - 50)  # 垂直位置はランダム
         
-        self.vx, self.vy = -4, 0  # 左方向に移動
+        self.vx, self.vy = -1.5, 0  # 左方向に移動
         self.state = "fly"
         self.interval = random.randint(50, 300)
 
